@@ -4,7 +4,6 @@
   import { Item, Tag, File, Link, CoalescerState, linkOpts, updateYamlProp, getYamlProp } from "./SettingsAndUtils";
   import { naturalSort } from "javascript-natural-sort";
   import { compareTwoStrings as compare } from "string-similarity";
-import Coalescer from "./main";
 
   let rootEl: HTMLElement;
 
@@ -12,9 +11,8 @@ import Coalescer from "./main";
   export let items: Item[];
   export let app: App;
   export let state: CoalescerState;
-  export let plugin: Coalescer;
-  let firstSelection: Item;
-  $: if (firstSelection == null) {
+  let pivot: Item;
+  $: if (pivot == null) {
     items = items.sort((i1, i2) => {
       if (i1 instanceof File && i2 instanceof File) {
         if (i1.isinRoot && !i2.isinRoot) return -1;
@@ -31,6 +29,7 @@ import Coalescer from "./main";
     });
   }
 
+  let [showFiles, showTags] = [true, true];
   let prevNumSelected: number = 0;
   let [numFilesSelected, numTagsSelected, numLinksSelected] = [0, 0, 0];
   $: {
@@ -44,7 +43,7 @@ import Coalescer from "./main";
     coalesceMenuCreate().showAtPosition({ x: event.clientX, y: event.clientY });
   };
   function reset() {
-    firstSelection = null;
+    pivot = null;
     lastSuggestion = 0;
     numSelected = 0;
     items = [...new Set([...selected, ...items])];
@@ -61,7 +60,7 @@ import Coalescer from "./main";
         reset();
       });
     });
-    if (firstSelection instanceof File) {
+    if (pivot instanceof File) {
       menu.addItem((item) => {
         item.setTitle("Coalesce To Aliases").onClick(async (e) => {
           if (numSelected < 2) return;
@@ -92,24 +91,26 @@ import Coalescer from "./main";
 
     let fileIsSelectedItem = (find: Item[], file: TFile) => find.find((item) => item instanceof File && item.path == file.path);
 
-    if (firstSelection instanceof Tag) {
+    if (pivot instanceof Tag) {
       callback = async (file, contents, find) => {
         if (!fileIsSelectedItem(find, file)) return contents;
-        contents = updateYamlProp("tags", firstSelection.basename, contents);
+        contents = updateYamlProp("tags", pivot.basename, contents);
         return contents;
       };
-    } else if (firstSelection instanceof File) {
+    } else if (pivot instanceof File) {
       callback = async (file, contents, find) => {
-        if (file == (firstSelection as File).tfile) return null;
+        if (file == (pivot as File).tfile) return null;
         // if the pivot is a file, rather than replacing links/tags in each coalesced file we merge it with the pivot
         if (!fileIsSelectedItem(find, file)) return contents;
-        await (app.fileManager as any).mergeFile((firstSelection as File).tfile, file);
+        console.log(`pivot,file`, pivot, file);
+        await (app.fileManager as any).mergeFile((pivot as File).tfile, file);
         return null;
       };
     }
-    let activeItems = items.filter((item) => item != firstSelection && item.selected).map((item) => item);
-    await findAndReplaceWith(activeItems, firstSelection, useAlias, callback);
+    let activeItems = items.filter((item) => item != pivot && item.selected).map((item) => item);
+    await findAndReplaceWith(activeItems, pivot, useAlias, callback);
   }
+  $: console.log(pivot);
   type Preprocessor = (file: TFile, contents: string, find: Item[]) => Promise<string>;
 
   async function findAndReplaceWith(find: Item | Item[], replace: Item, useAlias: boolean, preprocess?: Preprocessor) {
@@ -121,6 +122,7 @@ import Coalescer from "./main";
       if (item instanceof Tag) return tags.has(item.altRepresentation);
       else return links.has(item.basename) || embeds.has(item.basename);
     };
+    console.log(`find,replace`, find, replace);
 
     if (!Array.isArray(find)) findAndReplaceWith([find], replace, useAlias, preprocess);
     else {
@@ -135,24 +137,30 @@ import Coalescer from "./main";
         foundAlts.forEach((alt) => {
           if (useAlias && !(alt instanceof Tag)){
              aliases.push(alt.basename); 
-            contents = contents.replace(alt.altRepresentation, `[[${firstSelection.basename}|${alt.basename}]]`);
+            contents = contents.replace(alt.altRepresentation, `[[${pivot.basename}|${alt.basename}]]`);
             }
-          else contents = contents.replace(alt.altRepresentation, firstSelection.altRepresentation);
+          else contents = contents.replace(alt.altRepresentation, pivot.altRepresentation);
         });
 
         let fmtags = (getYamlProp("tags", contents) as string[]) ?? [];
         let filtered = fmtags.filter((v) => find.find((i) => i.basename != v));
 
-        if (filtered.length < fmtags.length) contents = updateYamlProp("tags", [firstSelection.basename, ...filtered], contents,true);
-        if(updateAlias && aliases.length) contents = updateYamlProp("aliases", aliases, contents);
+        // if (foundAlts.length) console.log(`foundAlts`, file, "\n", tags, "\n", links, "\n", foundAlts);
+        // console.log(`fmtags,filtered`, fmtags, filtered);
+
+        if (filtered.length < fmtags.length) contents = updateYamlProp("tags", [pivot.basename, ...filtered], contents,true);
+        if(updateAlias && aliases.length){
+          console.log(`aliases`, aliases)
+            contents = updateYamlProp("aliases", aliases, contents);
+        }
         await app.vault.modify(file, contents);
       };
 
       for (let file of app.vault.getMarkdownFiles()) {
         replaceTagsLinksAndEmbeds(file, await preprocess?.(file, await app.vault.cachedRead(file), find));
       }
-      if (firstSelection instanceof File) 
-        replaceTagsLinksAndEmbeds(firstSelection.tfile, await app.vault.cachedRead(firstSelection.tfile),useAlias);
+      if (pivot instanceof File) 
+        replaceTagsLinksAndEmbeds(pivot.tfile, await app.vault.cachedRead(pivot.tfile),useAlias);
     }
   }
 
@@ -166,7 +174,7 @@ import Coalescer from "./main";
       if (item.selected) selected.add(item);
       else selected.delete(item);
       numSelected = selected.size;
-      if (numSelected == 1) firstSelection = [...selected].first();
+      if (numSelected == 1) pivot = [...selected].first();
       if (!numSelected && prevNumSelected > 0) reset();
       if (numSelected) {
         let unselected = items.filter((v) => !v.selected);
@@ -197,10 +205,9 @@ import Coalescer from "./main";
     }
   };
 
-
   let shouldShow = (item: Item) => {
-    if (item instanceof Tag) return state.showTags;
-    if (item instanceof File) return firstSelection ? (firstSelection instanceof Link ? false : state.showFiles) : state.showFiles;
+    if (item instanceof Tag) return showTags;
+    if (item instanceof File) return pivot ? (pivot instanceof Link ? false : showFiles) : showFiles;
     if (item instanceof Link)
       return (
         state.linkView == "All" || (state.linkView == "Resolved" && item.resolved) || (state.linkView == "Unresolved" && !item.resolved)
@@ -231,20 +238,18 @@ import Coalescer from "./main";
     <div class="listToggles">
       <div class="toggleText">Files</div>
       <div
-        class="checkbox-container {state.showFiles ? 'is-enabled' : ''}"
+        class="checkbox-container {showFiles ? 'is-enabled' : ''}"
         on:click={() => {
-          state.showFiles = !state.showFiles;
+          showFiles = !showFiles;
           items = items;
-          plugin.saveData(false);
         }}
       />
       <div class="toggleText">Tags</div>
       <div
-        class="checkbox-container {state.showTags ? 'is-enabled' : ''}"
+        class="checkbox-container {showTags ? 'is-enabled' : ''}"
         on:click={() => {
-          state.showTags = !state.showTags;
+          showTags = !showTags;
           items = items;
-          plugin.saveData(false);
         }}
       />
       <div class="toggleText">Links</div>
@@ -264,7 +269,7 @@ import Coalescer from "./main";
         {/if}
         {#if shouldShow(item)}
           <div
-            class="nav-file {firstSelection == item ? 'first-selected' : ''}"
+            class="nav-file {pivot == item ? 'first-selected' : ''}"
             on:contextmenu={contextMenu}
             on:click={click(item)}
             on:dblclick={globalSearch(item.basename)}

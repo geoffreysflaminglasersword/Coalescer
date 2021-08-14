@@ -27,7 +27,7 @@ export default class CoalescerListView extends ItemView {
     }
 
     public getViewType(): string { return CoalesceListView; }
-    public getDisplayText(): string { return 'Coalescer'; }
+    public getDisplayText(): string { return 'Recent Files'; }
     public getIcon(): string { return 'clock'; }
 
     public onHeaderMenu(menu: Menu): void {
@@ -36,7 +36,7 @@ export default class CoalescerListView extends ItemView {
                 item
                     .setTitle('Refresh')
                     .setIcon('sweep')
-                    .onClick(async () => await this.plugin.saveData(true));
+                    .onClick(async () => await this.plugin.saveData());
             })
             .addItem((item) => {
                 item
@@ -94,8 +94,7 @@ export default class CoalescerListView extends ItemView {
             props: {
                 items: this.items,
                 app: this.app,
-                state:this.plugin.state,
-                plugin:this.plugin
+                state:this.plugin.state
             }
         });
   

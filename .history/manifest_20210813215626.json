@@ -1,0 +1,9 @@
+{
+    "id": "obsidian-coalescer",
+    "name": "Coalescer",
+    "version": "1.0.0",
+    "minAppVersion": "0.9.12",
+    "description": "Coalescer allows you to merge files, links, and tags with each other easily to better organize your vault",
+    "author": "Geoff",
+    "isDesktopOnly": false
+}

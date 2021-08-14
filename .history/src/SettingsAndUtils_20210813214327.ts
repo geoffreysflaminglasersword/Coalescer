@@ -82,7 +82,7 @@ export default class CoalescerSettingsTab extends PluginSettingTab {
 
                     const patterns = (e.target as HTMLInputElement).value;
                     this.plugin.state.omittedPaths = patterns.split('\n').filter(p => p.length);
-                    this.plugin.saveData(true);
+                    this.plugin.saveData();
                 };
             }).controlEl.style.width ='40%';
 
@@ -99,7 +99,7 @@ export default class CoalescerSettingsTab extends PluginSettingTab {
                 textArea.inputEl.onblur = (e: FocusEvent) => {
                     const patterns = (e.target as HTMLInputElement).value;
                     this.plugin.state.omittedTags = patterns.split('\n').filter(p => p.length);
-                    this.plugin.saveData(true);
+                    this.plugin.saveData();
                 };
             }).controlEl.style.width ='40%';
     }

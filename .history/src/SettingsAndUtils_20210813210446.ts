@@ -46,8 +46,8 @@ export interface CoalescerState {
 export const DEFAULT_SETTINGS: CoalescerState = {
 	omittedPaths: [],
 	omittedTags: [],
-    showFiles: true,
-    showTags: true,
+    showFiles:true,
+    showTags:true,
     linkView:'All'
 }
 
@@ -66,7 +66,7 @@ export default class CoalescerSettingsTab extends PluginSettingTab {
     public display(): void {
         const { containerEl } = this;
         containerEl.empty();
-        containerEl.createEl('h2', { text: 'Coalescer' });
+        containerEl.createEl('h2', { text: 'Recent Files List' });
 
 
         new Setting(containerEl)
@@ -82,7 +82,7 @@ export default class CoalescerSettingsTab extends PluginSettingTab {
 
                     const patterns = (e.target as HTMLInputElement).value;
                     this.plugin.state.omittedPaths = patterns.split('\n').filter(p => p.length);
-                    this.plugin.saveData(true);
+                    this.plugin.saveData();
                 };
             }).controlEl.style.width ='40%';
 
@@ -99,7 +99,7 @@ export default class CoalescerSettingsTab extends PluginSettingTab {
                 textArea.inputEl.onblur = (e: FocusEvent) => {
                     const patterns = (e.target as HTMLInputElement).value;
                     this.plugin.state.omittedTags = patterns.split('\n').filter(p => p.length);
-                    this.plugin.saveData(true);
+                    this.plugin.saveData();
                 };
             }).controlEl.style.width ='40%';
     }

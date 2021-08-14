@@ -6,12 +6,6 @@ import resolve from "@rollup/plugin-node-resolve";
 import svelte from 'rollup-plugin-svelte';
 import typescript from "@rollup/plugin-typescript";
 
-// import replace from "@rollup/plugin-replace";
-
-
-// import { env } from "process";
-
-
 const isProd = (process.env.BUILD === 'production');
 
 const banner =

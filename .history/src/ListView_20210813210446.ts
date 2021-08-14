@@ -5,7 +5,7 @@ import Coalescer from "./main";
 import List from './List.svelte'
 import { debug } from "svelte/internal";
 
-export const CoalesceListView = 'coalescer-view';
+export const CoalesceListView = 'recent-files';
 
 export default class CoalescerListView extends ItemView {
     private readonly plugin: Coalescer;
@@ -27,7 +27,7 @@ export default class CoalescerListView extends ItemView {
     }
 
     public getViewType(): string { return CoalesceListView; }
-    public getDisplayText(): string { return 'Coalescer'; }
+    public getDisplayText(): string { return 'Recent Files'; }
     public getIcon(): string { return 'clock'; }
 
     public onHeaderMenu(menu: Menu): void {
@@ -36,7 +36,7 @@ export default class CoalescerListView extends ItemView {
                 item
                     .setTitle('Refresh')
                     .setIcon('sweep')
-                    .onClick(async () => await this.plugin.saveData(true));
+                    .onClick(async () => await this.plugin.saveData());
             })
             .addItem((item) => {
                 item
@@ -54,7 +54,6 @@ export default class CoalescerListView extends ItemView {
     }
 
     public readonly redraw = (): void => {
-        console.log(`this.plugin.state`, this.plugin.state)
         this.comp?.$destroy();
         this.items = []
         for (const [key, value] of Object.entries((this.app.metadataCache as any).getTags())) {
@@ -94,8 +93,7 @@ export default class CoalescerListView extends ItemView {
             props: {
                 items: this.items,
                 app: this.app,
-                state:this.plugin.state,
-                plugin:this.plugin
+                state:this.plugin.state
             }
         });
   

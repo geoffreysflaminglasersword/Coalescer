@@ -37,10 +37,9 @@ export default class Coalescer extends Plugin {
 	}
 
 	public async loadData() {let r = await super.loadData(); console.log(`r`, r); this.state = Object.assign({}, DEFAULT_SETTINGS, r);}
-	public async saveData(redraw:boolean) { 
-		console.log(`this.state`, this.state)
+	public async saveData() { 
 		await super.saveData(this.state); 
-		if(redraw) this.view?.redraw();
+		this.view?.redraw();
 	}
   
 	private readonly initView = async () => {
@@ -55,7 +54,6 @@ export default class Coalescer extends Plugin {
 		active: true,
 	  });
 	};
-	
 }
 
 
