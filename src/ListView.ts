@@ -54,7 +54,6 @@ export default class CoalescerListView extends ItemView {
     }
 
     public readonly redraw = (): void => {
-        console.log(`this.plugin.state`, this.plugin.state)
         this.comp?.$destroy();
         this.items = []
         for (const [key, value] of Object.entries((this.app.metadataCache as any).getTags())) {

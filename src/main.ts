@@ -36,9 +36,8 @@ export default class Coalescer extends Plugin {
 		(this.app.workspace as any).unregisterHoverLinkSource(CoalesceListView);
 	}
 
-	public async loadData() {let r = await super.loadData(); console.log(`r`, r); this.state = Object.assign({}, DEFAULT_SETTINGS, r);}
+	public async loadData() {this.state = Object.assign({}, DEFAULT_SETTINGS, await super.loadData());}
 	public async saveData(redraw:boolean) { 
-		console.log(`this.state`, this.state)
 		await super.saveData(this.state); 
 		if(redraw) this.view?.redraw();
 	}
